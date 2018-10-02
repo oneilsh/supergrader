@@ -18,6 +18,7 @@ def parse_args():
   return parser.parse_args()
   
 args = parse_args()
+args.directory = os.path.realpath(args.directory)
 
 
 def get_subdirs(dir, filter_command = None):
