@@ -5,7 +5,7 @@
 ### Install and requirements
 
 
-The tmux utility and python are required. For install, place `supergrader.py`, `supergrader_utility.py`, `supergrader_help.txt`, and `supergrader_tmux.conf` in the same location, somewhere accessible by `$PATH`.
+The tmux utility (version >= 2.6) and python are required. For install, place `supergrader.py`, `supergrader_utility.py`, `supergrader_help.txt`, and `supergrader_tmux.conf` in the same location, somewhere accessible by `$PATH`.
 
 
 ### Quick Reference (details below)
