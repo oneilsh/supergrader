@@ -1,16 +1,15 @@
 
 
-Press 'q' to exit this help.
 
 
-Install and requirements
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+### Install and requirements
+
 
 The tmux utility and python are required. For install, place supergrader.py, supergrader_utility.py, supergrader_help.txt, and supergrader_tmux.conf in the same location, somewhere in $PATH.
 
 
-Quick Reference (details below)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+### Quick Reference (details below)
+
 
 Since SuperGrader is a wrapper around tmux, all tmux commands and configuration are available. 
 
@@ -33,8 +32,8 @@ SuperGrader interactive commands:
 ^b f (or ^a f): Prompt for a folder name to jump to, rather than using next or previous.
 
 
-About
-~~~~~~~~~~~
+### About
+
 
 SuperGrader is a set of tmux scripts that help with automating executing a handful of commands within a series of subfolders of a common folder; the specific use case is for grading student folders of the form:
 
@@ -57,8 +56,8 @@ The grader can then use ^b n (or ^a n) to move the dynamic panels to the next fo
 
 
 
-Exit Codes
-~~~~~~~~~~~~~
+### Exit Codes
+
 
 The basic usage of SuperGrader is superified by understanding and using command-line exit codes. Although not shown by default, each command run returns a "success" exit code (0) or an "error" exit code (not 0). These exit codes can be used to control series of commands. Suppose, for example, that we want a panel to first `cd hw1`, and then run `python hw1.py`. This could be accomplished with
 
@@ -88,8 +87,7 @@ These features may depend on the shell being used and its configuration. In bash
 --dynamic-panel '{ cd hw1 || cd HW1; } && { python hw1.py || python HW1.py; }'
 
 
-Features
-~~~~~~~~~~~~~
+### Features
 
 Commands can reference the shell variable DIR, which contains the specific folder name being graded. For example, to edit a file called grade_student_1.txt inside of student_1/, and grade_student_2.txt inside of student_2/, try:
 
@@ -118,8 +116,8 @@ Pipes work too; here we filter based on those that don't have a result after gre
 
 
 
-Future ideas
-~~~~~~~~~~~~~~
+### Future ideas
+
 
 The backend script (supergrader_utility.py) needs refactoring to be more multipurpose without so much logic.
 
