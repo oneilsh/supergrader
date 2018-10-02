@@ -102,7 +102,7 @@ unalias cd
 alias cd 'cd \!* && pwd' 
 ```
 
-to your `.cshrc`.]
+to your `.cshrc`. Note that this also only works if you have permissions for the folders in question: on the ACTF there is currently a permissions bug where you may need to `newgrp` before running SuperGrader.]
 
 These features may depend on the shell being used and its configuration. In bash, it is possible to logically group commands, though the syntax is fragile (proper whitespace required, and semicolon required at the end of each group's command set):
 

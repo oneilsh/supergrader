@@ -2,6 +2,7 @@
 
 Press 'q' to exit this help.
 
+More complete documentation may be found at: https://github.com/oneilsh/supergrader
 
 Install and requirements
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
