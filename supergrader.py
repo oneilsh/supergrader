@@ -22,6 +22,7 @@ args = parse_args()
 
 def get_subdirs(dir, filter_command = None):
   alldirs = [os.path.join(dir, o) for o in os.listdir(dir) if os.path.isdir(os.path.join(dir,o))]
+  alldirs = [os.path.realpath(d) for d in alldirs]
   if not filter_command:
     return alldirs
     
