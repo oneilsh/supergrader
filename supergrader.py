@@ -13,12 +13,11 @@ def parse_args():
   parser.add_argument('-s', '--static-panel', dest = 'static_panel_cmds',action = 'append', help = "Create a pane running this command, don't update the pane between folders.")
   parser.add_argument('-d', '--dirs', dest = 'directory', default = os.getcwd(), help = "Look in this folder for folders to grade. (Default: current working directory.)")
   parser.add_argument('-f', '--filter-command', dest = 'filter_command', help = "Only process folders when this this command, run in the folder, exits with a success code.")
-  
+  parser.add_argument('--theme', dest = 'theme', default = "dark", help = "Set color scheme to match your terminal theme. Either 'dark' or 'light'.")
+
   return parser.parse_args()
   
 args = parse_args()
-
-
 
 
 def get_subdirs(dir, filter_command = None):
@@ -124,6 +123,13 @@ subprocess.check_output("tmux send -t SuperGrader:control Enter", shell = True)
 script_path = os.path.dirname(os.path.realpath(__file__))
 subprocess.check_output("tmux source-file " + os.path.join(script_path, "supergrader_tmux.conf"), shell = True)
 
+# set theme
+if args.theme == "dark":
+  subprocess.check_output("tmux set -g window-style 'fg=#AAAAAA,bg=#000000'", shell = True)
+  subprocess.check_output("tmux set -g window-active-style 'fg=#DDDDDD,bg=#000000'", shell = True)
+else:
+  subprocess.check_output("tmux set -g window-style 'fg=#AAAAAA,bg=#FFFFFF'", shell = True)
+  subprocess.check_output("tmux set -g window-active-style 'fg=#000002,bg=#FFFFFF'", shell = True)
 
 
 cmd = "tmux -2 attach "

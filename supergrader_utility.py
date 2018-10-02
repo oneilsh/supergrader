@@ -26,7 +26,6 @@ def parse_args():
 args = parse_args()
 
 
-
 def session_exists():
   session_name = "SuperGrader"
   try:
@@ -140,7 +139,6 @@ for panel in panels:
     subprocess.check_output("tmux send-keys -t SuperGrader:panels." + index + " C-l" , shell = True)
     subprocess.check_output("tmux send-keys -t SuperGrader:panels." + index + " '" + command + "'", shell = True)
     subprocess.check_output("tmux send-keys -t SuperGrader:panels." + index + " Enter", shell = True)
-
 
 
 subprocess.check_output("tmux select-window -t SuperGrader:panels", shell = True)
