@@ -30,8 +30,9 @@ def get_subdirs(dir, filter_command = None):
   filtered = []
   for dir in alldirs:
     try:
-      cmd = "DIR=" + os.path.basename(dir) + "; " + filter_command
-      sys.stderr.write("Checking filter in " + dir + " with `" + cmd + "`\n")
+      cmd = "test \"$?BASH_VERSION\" = \"0\" || eval 'setenv() { export \"$1=$2\"; }'  "
+      cmd = cmd + "; " + "setenv DIR " + os.path.basename(dir) + "; " + filter_command
+      sys.stderr.write("Checking filter in " + dir + " with `" + filter_command + "`\n")
       result = subprocess.check_output(cmd, shell = True, cwd = dir) 
       filtered.append(dir)
     except:
@@ -116,7 +117,7 @@ for panel in panels:
 
 
 cmd = "tmux setenv SG_INFO '" + json.dumps(sg_dict) + "'"
-subprocess.check_output(cmd, shell = True)
+
 
 subprocess.check_output("tmux select-window -t SuperGrader:panels", shell = True)
 subprocess.check_output("tmux send -t SuperGrader:control 'supergrader_utility.py -n'", shell = True)

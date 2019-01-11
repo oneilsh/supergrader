@@ -134,7 +134,10 @@ for panel in panels:
   
   if type == "dynamic":  # need to update it
     subprocess.check_output("tmux respawn-pane -t SuperGrader:panels." + index + " -k -c '" + foldername + "'", shell = True)
-    subprocess.check_output("tmux send-keys -t SuperGrader:panels." + index + " 'DIR=" + os.path.basename(foldername) + "'", shell = True)
+    cmd = "test \"$?BASH_VERSION\" = \"0\" || eval 'setenv() { export \"$1=$2\"; }'  "
+    subprocess.check_output("tmux send-keys -t SuperGrader:panels." + index + cmd, shell = True)    
+    subprocess.check_output("tmux send-keys -t SuperGrader:panels." + index + " Enter", shell = True)
+    subprocess.check_output("tmux send-keys -t SuperGrader:panels." + index + " 'setenv DIR " + os.path.basename(foldername) + "'", shell = True)
     subprocess.check_output("tmux send-keys -t SuperGrader:panels." + index + " Enter", shell = True)
     subprocess.check_output("tmux send-keys -t SuperGrader:panels." + index + " C-l" , shell = True)
     subprocess.check_output("tmux send-keys -t SuperGrader:panels." + index + " '" + command + "'", shell = True)
