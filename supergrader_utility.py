@@ -18,13 +18,14 @@ def parse_args():
   parser.add_argument('-d', '--dir', dest = 'dir', help = "Go to this folder and execute the panel commands.")
   parser.add_argument('-n', '--next', dest = 'next', action = 'store_true', help = "Go to the next folder in the list.")
   parser.add_argument('-p', '--previous', dest = 'previous', action = 'store_true', help = "Go to the previous folder in the list.")
+  parser.add_argument('-M', '--macro', nargs=2, metavar = ('macro_name', 'macro_value'), help = "Define a macro (string that can later be inserted by macro name).")
+  parser.add_argument('-m', '--use_macro', dest = 'use_macro', help = "Tell tmux to insert a macro string by name.")
   parser.add_argument('--show_interactive_help', dest = 'show_interactive_help', action = 'store_true', help = "Open some help in less, don't do anything else.")
   
   return parser.parse_args()
   
 
 args = parse_args()
-
 
 def session_exists():
   session_name = "SuperGrader"
@@ -46,7 +47,19 @@ if args.show_interactive_help:
     sys.stderr.write("Please don't run supergrader_utility.py directly. It's not meant for that. (If you used ^b h inside SuperGrader, this is an error that shouldn't happen.")
     exit(1)
   
-  
+if args.macro:
+  name = args.macro[0]
+  val = args.macro[1]
+  cmd = "tmux setenv 'macro_" + name + "' '" + val + "'"
+  subprocess.check_output(cmd, shell = True)
+  quit()
+
+if args.use_macro:
+  macro_val = subprocess.check_output("tmux showenv 'macro_" + args.use_macro + "'", shell = True)
+  macro_val = macro_val[(len(args.use_macro)+7):].strip()# get rid of macro_thename=
+  cmd = "tmux send-keys '" + macro_val + "'"
+  subprocess.check_output(cmd, shell = True)
+  quit()
 
 if args.dir == None and args.next == False and args.previous == False:
   subprocess.check_output("tmux display-message 'supergrader_utility.py called with no valid options. This shouldnt happen. WHAT DID YOU DO?", shell = True)
@@ -133,6 +146,13 @@ for panel in panels:
   index = panel["index"]
   
   if type == "dynamic":  # need to update it
+    # update DIR var in control panel
+    cmd = "test \"$?BASH_VERSION\" = \"0\" || eval 'setenv() { export \"$1=$2\"; }'  "
+    subprocess.check_output("tmux send-keys -t SuperGrader:control.0" + cmd, shell = True)    
+    subprocess.check_output("tmux send-keys -t SuperGrader:control.0" + " Enter", shell = True)
+    subprocess.check_output("tmux send-keys -t SuperGrader:control.0" + " 'setenv DIR " + os.path.basename(foldername) + "'", shell = True)
+    subprocess.check_output("tmux send-keys -t SuperGrader:control.0" + " Enter", shell = True)
+
     subprocess.check_output("tmux respawn-pane -t SuperGrader:panels." + index + " -k -c '" + foldername + "'", shell = True)
     cmd = "test \"$?BASH_VERSION\" = \"0\" || eval 'setenv() { export \"$1=$2\"; }'  "
     subprocess.check_output("tmux send-keys -t SuperGrader:panels." + index + cmd, shell = True)    
