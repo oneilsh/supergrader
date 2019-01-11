@@ -117,6 +117,7 @@ for panel in panels:
 
 
 cmd = "tmux setenv SG_INFO '" + json.dumps(sg_dict) + "'"
+subprocess.check_output(cmd, shell = True)
 
 
 subprocess.check_output("tmux select-window -t SuperGrader:panels", shell = True)
