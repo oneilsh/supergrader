@@ -53,8 +53,8 @@ if args.dir == None and args.next == False and args.previous == False:
   sys.exit(1)
 
 
-
-sg_dict = json.loads(subprocess.check_output("tmux showenv SG_INFO", shell = True).strip().split("=")[1])
+sg_info = subprocess.check_output("tmux showenv SG_INFO", shell = True).strip()
+sg_dict = json.loads(sg_info[8:])   # strip off "SG_DICT=" 
 dirs = sg_dict["dirs"]
 panels = sg_dict["panels"]
 currentdir = sg_dict["currentdir"]
