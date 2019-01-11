@@ -30,7 +30,7 @@ def get_subdirs(dir, filter_command = None):
   filtered = []
   for dir in alldirs:
     try:
-      cmd = "test \"$?BASH_VERSION\" = \"0\" || eval 'setenv() { export \"$1=$2\"; }'  "
+      cmd = "/bin/test \"$?BASH_VERSION\" = \"0\" || eval 'setenv() { export \"$1=$2\"; }'  "
       cmd = cmd + "; " + "setenv DIR " + os.path.basename(dir) + "; " + filter_command
       sys.stderr.write("Checking filter in " + dir + " with `" + filter_command + "`\n")
       result = subprocess.check_output(cmd, shell = True, cwd = dir) 

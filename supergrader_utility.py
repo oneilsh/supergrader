@@ -137,8 +137,18 @@ basename = basename + " "
 subprocess.check_output("tmux set -g status-right '" + basename + "'", shell = True)
 
 
+fdate = '"' + subprocess.check_output("date +%Y-%m-%d_%H:%M:%S", shell = True).strip() + '"'
+hdate = '"' + subprocess.check_output("date '+%b %d, %Y @ %I:%M%p'", shell = True).strip() + '"'
+add_setenv_cmd = """  '/bin/test $?BASH_VERSION = 0 || eval ' "'" 'setenv ( ) {export $1=$2}' "'" Enter  """
 
-
+# set things up for the control panel to use things for macro 
+subprocess.check_output("tmux send-keys -t SuperGrader:control.0 " + add_setenv_cmd, shell = True)    
+subprocess.check_output("tmux send-keys -t SuperGrader:control.0 " + " 'setenv DIR " + os.path.basename(foldername) + "'", shell = True)
+subprocess.check_output("tmux send-keys -t SuperGrader:control.0 " + " Enter", shell = True)
+subprocess.check_output("tmux send-keys -t SuperGrader:control.0 " + " 'setenv HDATE " + hdate + "'", shell = True)
+subprocess.check_output("tmux send-keys -t SuperGrader:control.0 " + " Enter", shell = True)
+subprocess.check_output("tmux send-keys -t SuperGrader:control.0 " + " 'setenv FDATE " + fdate + "'", shell = True)
+subprocess.check_output("tmux send-keys -t SuperGrader:control.0 " + " Enter", shell = True)
 
 # update the panels and refresh the display
 for panel in panels:
@@ -147,19 +157,15 @@ for panel in panels:
   index = panel["index"]
   
   if type == "dynamic":  # need to update it
-    # update DIR var in control panel
-    cmd = "test \"$?BASH_VERSION\" = \"0\" || eval 'setenv() { export \"$1=$2\"; }'  "
-    subprocess.check_output("tmux send-keys -t SuperGrader:control.0 " + cmd, shell = True)    
-    subprocess.check_output("tmux send-keys -t SuperGrader:control.0 " + " Enter", shell = True)
-    subprocess.check_output("tmux send-keys -t SuperGrader:control.0 " + " 'setenv DIR " + os.path.basename(foldername) + "'", shell = True)
-    subprocess.check_output("tmux send-keys -t SuperGrader:control.0 " + " Enter", shell = True)
-
     subprocess.check_output("tmux respawn-pane -t SuperGrader:panels." + index + " -k -c '" + foldername + "'", shell = True)
-    cmd = "test \"$?BASH_VERSION\" = \"0\" || eval 'setenv() { export \"$1=$2\"; }'  "
-    subprocess.check_output("tmux send-keys -t SuperGrader:panels." + index + " " + cmd, shell = True)    
-    subprocess.check_output("tmux send-keys -t SuperGrader:panels." + index + " Enter", shell = True)
+    subprocess.check_output("tmux send-keys -t SuperGrader:panels." + index + " " + add_setenv_cmd, shell = True)    
     subprocess.check_output("tmux send-keys -t SuperGrader:panels." + index + " 'setenv DIR " + os.path.basename(foldername) + "'", shell = True)
     subprocess.check_output("tmux send-keys -t SuperGrader:panels." + index + " Enter", shell = True)
+    subprocess.check_output("tmux send-keys -t SuperGrader:panels." + index + " 'setenv HDATE " + hdate + "'", shell = True)
+    subprocess.check_output("tmux send-keys -t SuperGrader:panels." + index + " Enter", shell = True)
+    subprocess.check_output("tmux send-keys -t SuperGrader:panels." + index + " 'setenv FDATE " + fdate + "'", shell = True)
+    subprocess.check_output("tmux send-keys -t SuperGrader:panels." + index + " Enter", shell = True)
+
     subprocess.check_output("tmux send-keys -t SuperGrader:panels." + index + " C-l" , shell = True)
     subprocess.check_output("tmux send-keys -t SuperGrader:panels." + index + " '" + command + "'", shell = True)
     subprocess.check_output("tmux send-keys -t SuperGrader:panels." + index + " Enter", shell = True)
