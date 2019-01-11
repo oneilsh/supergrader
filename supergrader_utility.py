@@ -18,7 +18,7 @@ def parse_args():
   parser.add_argument('-d', '--dir', dest = 'dir', help = "Go to this folder and execute the panel commands.")
   parser.add_argument('-n', '--next', dest = 'next', action = 'store_true', help = "Go to the next folder in the list.")
   parser.add_argument('-p', '--previous', dest = 'previous', action = 'store_true', help = "Go to the previous folder in the list.")
-  parser.add_argument('-M', '--macro', nargs=2, metavar = ('macro_name', 'macro_value'), help = "Define a macro (string that can later be inserted by macro name).")
+  #parser.add_argument('-M', '--macro', nargs=2, metavar = ('macro_name', 'macro_value'), help = "Define a macro (string that can later be inserted by macro name).")
   parser.add_argument('-m', '--use_macro', dest = 'use_macro', help = "Tell tmux to insert a macro string by name.")
   parser.add_argument('--show_interactive_help', dest = 'show_interactive_help', action = 'store_true', help = "Open some help in less, don't do anything else.")
   
@@ -47,17 +47,18 @@ if args.show_interactive_help:
     sys.stderr.write("Please don't run supergrader_utility.py directly. It's not meant for that. (If you used ^b h inside SuperGrader, this is an error that shouldn't happen.")
     exit(1)
   
-if args.macro:
-  name = args.macro[0]
-  val = args.macro[1]
-  cmd = "tmux setenv 'macro_" + name + "' '" + val + "'"
-  subprocess.check_output(cmd, shell = True)
-  quit()
+#if args.macro:
+#  name = args.macro[0]
+#  val = args.macro[1]
+#  cmd = "tmux setenv 'macro_" + name + "' '" + val + "'"
+#  subprocess.check_output(cmd, shell = True)
+#  quit()
 
 if args.use_macro:
   macro_val = subprocess.check_output("tmux showenv 'macro_" + args.use_macro + "'", shell = True)
   macro_val = macro_val[(len(args.use_macro)+7):].strip()# get rid of macro_thename=
-  cmd = "tmux send-keys '" + macro_val + "'"
+  macro_res = subprocess.check_output("echo -n -e " + macro_val, shell = True)
+  cmd = "tmux send-keys '" + macro_res + "'"
   subprocess.check_output(cmd, shell = True)
   quit()
 
