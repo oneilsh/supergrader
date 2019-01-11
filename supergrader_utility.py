@@ -57,7 +57,7 @@ if args.show_interactive_help:
 if args.use_macro:
   macro_val = subprocess.check_output("tmux showenv 'macro_" + args.use_macro + "'", shell = True)
   macro_val = macro_val[(len(args.use_macro)+7):].strip()# get rid of macro_thename=
-  macro_res = subprocess.check_output("echo -n -e " + macro_val, shell = True)
+  macro_res = subprocess.check_output('/bin/echo -n -e "' + macro_val + '"', shell = True)
   cmd = "tmux send-keys '" + macro_res + "'"
   subprocess.check_output(cmd, shell = True)
   quit()
@@ -149,14 +149,14 @@ for panel in panels:
   if type == "dynamic":  # need to update it
     # update DIR var in control panel
     cmd = "test \"$?BASH_VERSION\" = \"0\" || eval 'setenv() { export \"$1=$2\"; }'  "
-    subprocess.check_output("tmux send-keys -t SuperGrader:control.0" + cmd, shell = True)    
-    subprocess.check_output("tmux send-keys -t SuperGrader:control.0" + " Enter", shell = True)
-    subprocess.check_output("tmux send-keys -t SuperGrader:control.0" + " 'setenv DIR " + os.path.basename(foldername) + "'", shell = True)
-    subprocess.check_output("tmux send-keys -t SuperGrader:control.0" + " Enter", shell = True)
+    subprocess.check_output("tmux send-keys -t SuperGrader:control.0 " + cmd, shell = True)    
+    subprocess.check_output("tmux send-keys -t SuperGrader:control.0 " + " Enter", shell = True)
+    subprocess.check_output("tmux send-keys -t SuperGrader:control.0 " + " 'setenv DIR " + os.path.basename(foldername) + "'", shell = True)
+    subprocess.check_output("tmux send-keys -t SuperGrader:control.0 " + " Enter", shell = True)
 
     subprocess.check_output("tmux respawn-pane -t SuperGrader:panels." + index + " -k -c '" + foldername + "'", shell = True)
     cmd = "test \"$?BASH_VERSION\" = \"0\" || eval 'setenv() { export \"$1=$2\"; }'  "
-    subprocess.check_output("tmux send-keys -t SuperGrader:panels." + index + cmd, shell = True)    
+    subprocess.check_output("tmux send-keys -t SuperGrader:panels." + index + " " + cmd, shell = True)    
     subprocess.check_output("tmux send-keys -t SuperGrader:panels." + index + " Enter", shell = True)
     subprocess.check_output("tmux send-keys -t SuperGrader:panels." + index + " 'setenv DIR " + os.path.basename(foldername) + "'", shell = True)
     subprocess.check_output("tmux send-keys -t SuperGrader:panels." + index + " Enter", shell = True)
