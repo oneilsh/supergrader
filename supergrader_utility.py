@@ -4,6 +4,10 @@ import json
 import sys
 import argparse
 import subprocess
+import toml
+import io
+import re
+import pipes
 
 script_path = os.path.dirname(os.path.realpath(__file__))
 
@@ -19,6 +23,7 @@ def parse_args():
   parser.add_argument('-n', '--next', dest = 'next', action = 'store_true', help = "Go to the next folder in the list.")
   parser.add_argument('-p', '--previous', dest = 'previous', action = 'store_true', help = "Go to the previous folder in the list.")
   #parser.add_argument('-M', '--macro', nargs=2, metavar = ('macro_name', 'macro_value'), help = "Define a macro (string that can later be inserted by macro name).")
+  parser.add_argument('-M', '--reload_macros', dest = 'reload_macros', action = 'store_true',  help = "Reload macros from the macros file.")
   parser.add_argument('-m', '--use_macro', dest = 'use_macro', help = "Tell tmux to insert a macro string by name.")
   parser.add_argument('--show_interactive_help', dest = 'show_interactive_help', action = 'store_true', help = "Open some help in less, don't do anything else.")
   
@@ -46,7 +51,33 @@ if args.show_interactive_help:
   else:
     sys.stderr.write("Please don't run supergrader_utility.py directly. It's not meant for that. (If you used ^b h inside SuperGrader, this is an error that shouldn't happen.")
     exit(1)
-  
+
+
+
+if args.reload_macros:
+  if "MACROFILE" in os.environ:
+    if os.environ["MACROFILE"] != "NA":
+
+      toml_dict = toml.loads(io.open(os.environ["MACROFILE"], "r").read())
+      macros = toml_dict['macros']
+      for name in macros:
+        val = macros[name]
+        val = re.subn(r"\t", r"\\t", val, 0)[0]
+        val = re.subn(r"\n", r"\\n", val, 0)[0]
+        val = re.subn(r"'", r"'\''", val, 0)[0]
+        cmd = "tmux setenv 'macro_" + name + "' '" + val + "'"
+        subprocess.check_output(cmd, shell = True)
+
+      subprocess.check_output("tmux display-message 'Reloaded macros from " + os.environ["MACROFILE"] + "'", shell = True)
+      quit()
+
+    else: 
+      subprocess.check_output("tmux display-message 'No macros file specified for session, cannot reload.'", shell = True)
+
+  else:
+    subprocess.check_output("tmux display-message 'No macros file specified for session, cannot reload.'", shell = True)
+
+
 #if args.macro:
 #  name = args.macro[0]
 #  val = args.macro[1]
@@ -58,8 +89,14 @@ if args.use_macro:
   macro_val = subprocess.check_output("tmux showenv 'macro_" + args.use_macro + "'", shell = True)
   macro_val = macro_val[(len(args.use_macro)+7):].strip()# get rid of macro_thename=
   macro_res = subprocess.check_output('/bin/echo -n -e "' + macro_val + '"', shell = True)
-  cmd = "tmux send-keys '" + macro_res + "'"
-  subprocess.check_output(cmd, shell = True)
+  lines = macro_res.split("\n")
+  print(lines)
+  for line in lines:
+    line = re.subn(r"'", r"'\''", line, 0)[0]
+    cmd = "tmux send-keys -l '" + line + "'"
+    subprocess.check_output(cmd, shell = True)
+    cmd = "tmux send-keys Enter"
+    subprocess.check_output(cmd, shell = True)
   quit()
 
 if args.dir == None and args.next == False and args.previous == False:

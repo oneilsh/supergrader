@@ -5,7 +5,7 @@ import os
 import time
 import json
 import sys
-
+import toml
 
 def parse_args():
   parser = argparse.ArgumentParser("SuperGrader. For details run `supergrader.py` then Control-b h")
@@ -13,6 +13,7 @@ def parse_args():
   parser.add_argument('-s', '--static-panel', dest = 'static_panel_cmds',action = 'append', help = "Create a pane running this command, don't update the pane between folders.")
   parser.add_argument('-d', '--dirs', dest = 'directory', default = os.getcwd(), help = "Look in this folder for folders to grade. (Default: current working directory.)")
   parser.add_argument('-f', '--filter-command', dest = 'filter_command', help = "Only process folders when this this command, run in the folder, exits with a success code.")
+  parser.add_argument('-m', '--macros_file', default = "NA", dest = 'macros_file', help = "Read macros from this file.")
   parser.add_argument('--theme', dest = 'theme', default = "dark", help = "Set color scheme to match your terminal theme. Either 'dark' or 'light'.")
 
   return parser.parse_args()
@@ -38,6 +39,10 @@ def get_subdirs(dir, filter_command = None):
     except:
       pass
 
+  if len(filtered) == 0:
+      sys.stderr.write("No directories passed filter. Exiting.\n")
+      sys.exit(0)
+
   return filtered
 
 
@@ -53,12 +58,13 @@ def create_session(panelcmds):
       exit(0)
     else:
       subprocess.check_output("tmux kill-session -t SuperGrader", shell = True)
+      os.environ["MACROFILE"] = args.macros_file
       subprocess.check_output("tmux new-session -d -s SuperGrader", shell = True)
       subprocess.check_output("tmux new-window -n control ", shell = True)
       subprocess.check_output("tmux new-window -n panels ", shell = True)
      
   except subprocess.CalledProcessError as res:
-    print(res)
+    os.environ["MACROFILE"] = args.macros_file
     subprocess.check_output("tmux new-session -d -s " + session_name, shell = True)
     subprocess.check_output("tmux new-window -n control ", shell = True)
     subprocess.check_output("tmux new-window -n panels ", shell = True)
@@ -134,6 +140,10 @@ if args.theme == "dark":
 else:
   subprocess.check_output("tmux set -g window-style 'fg=#AAAAAA,bg=#FFFFFF'", shell = True)
   subprocess.check_output("tmux set -g window-active-style 'fg=#000002,bg=#FFFFFF'", shell = True)
+
+if args.macros_file != "NA":
+  subprocess.check_output("tmux send -t SuperGrader:control 'supergrader_utility.py -M " + args.macros_file + "'", shell = True)
+  subprocess.check_output("tmux send -t SuperGrader:control Enter", shell = True)
 
 
 cmd = "tmux -2 attach "
