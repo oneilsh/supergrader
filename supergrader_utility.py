@@ -65,6 +65,7 @@ if args.reload_macros:
         val = re.subn(r"\t", r"\\t", val, 0)[0]
         val = re.subn(r"\n", r"\\n", val, 0)[0]
         val = re.subn(r"'", r"'\''", val, 0)[0]
+        val = re.subn(r'"', r'"\""', val, 0)[0]
         cmd = "tmux setenv 'macro_" + name + "' '" + val + "'"
         subprocess.check_output(cmd, shell = True)
 
