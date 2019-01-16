@@ -8,6 +8,8 @@ import toml
 import io
 import re
 import pipes
+import random
+import time
 
 script_path = os.path.dirname(os.path.realpath(__file__))
 
@@ -22,9 +24,8 @@ def parse_args():
   parser.add_argument('-d', '--dir', dest = 'dir', help = "Go to this folder and execute the panel commands.")
   parser.add_argument('-n', '--next', dest = 'next', action = 'store_true', help = "Go to the next folder in the list.")
   parser.add_argument('-p', '--previous', dest = 'previous', action = 'store_true', help = "Go to the previous folder in the list.")
-  #parser.add_argument('-M', '--macro', nargs=2, metavar = ('macro_name', 'macro_value'), help = "Define a macro (string that can later be inserted by macro name).")
-  parser.add_argument('-M', '--reload_macros', dest = 'reload_macros', action = 'store_true',  help = "Reload macros from the macros file.")
-  parser.add_argument('-m', '--use_macro', dest = 'use_macro', help = "Tell tmux to insert a macro string by name.")
+  parser.add_argument('-m', '--use_macro', dest = 'use_macro', help = "Tell tmux to insert a macro string (or macroset) by name.")
+  parser.add_argument('-t', '--use_macro_target', nargs=2, metavar = ('macro_name', 'macro_panel'), help = "Target a macro to a particular panel number.")
   parser.add_argument('--show_interactive_help', dest = 'show_interactive_help', action = 'store_true', help = "Open some help in less, don't do anything else.")
   
   return parser.parse_args()
@@ -45,7 +46,7 @@ def session_exists():
 if args.show_interactive_help: 
   if session_exists():
     subprocess.check_output("tmux select-window -t SuperGrader:control", shell = True)
-    windowsize = subprocess.check_output("tmux display -p '#{pane_width}'", shell = True).strip()
+    windowsize = subpocess.check_output("tmux display -p '#{pane_width}'", shell = True).strip()
     subprocess.check_output("tmux send 'cat " + script_path + "/supergrader_help.txt | fold -s -w " + windowsize + " | less && tmux select-window -t SuperGrader:panels'", shell = True)
     subprocess.check_output("tmux send Enter", shell = True)
   else:
@@ -53,57 +54,88 @@ if args.show_interactive_help:
     exit(1)
 
 
+# returns a string or a dict; if a string, it's the macro to run.
+# if a dict, it's a set of panel numbers as keys and macros to run in those
+# panels as values (for macrosets)
+def read_macro(desired):
+  if os.environ.get("MACROFILE", "NA") != "NA":       # if there's a value and it's not NA
+    toml_dict = toml.loads(io.open(os.environ["MACROFILE"], "r").read())
 
-if args.reload_macros:
-  if "MACROFILE" in os.environ:
-    if os.environ["MACROFILE"] != "NA":
-
-      toml_dict = toml.loads(io.open(os.environ["MACROFILE"], "r").read())
-      macros = toml_dict['macros']
+    macros = toml_dict.get("macros", None)
+    if macros:
       for name in macros:
-        val = macros[name]
-        val = re.subn(r"\t", r"\\t", val, 0)[0]
-        val = re.subn(r"\n", r"\\n", val, 0)[0]
-        val = re.subn(r"'", r"'\''", val, 0)[0]
-        val = re.subn(r'"', r'"\""', val, 0)[0]
-        cmd = "tmux setenv 'macro_" + name + "' '" + val + "'"
-        subprocess.check_output(cmd, shell = True)
+        if name == desired:
+          val = macros[name]
+          # if the macro is a list of macros, select one at random.
+          if val.__class__.__name__ == 'list':
+            val = random.choice(val)            
+          val = re.subn(r"\t", r"\\t", val, 0)[0]
+          val = re.subn(r"\n", r"\\n", val, 0)[0]
+          val = re.subn(r"'", r"'\''", val, 0)[0]
+          val = re.subn(r'"', r'"\""', val, 0)[0]
+          
+          return val
 
-      subprocess.check_output("tmux display-message 'Reloaded macros from " + os.environ["MACROFILE"] + "'", shell = True)
-      quit()
-
-    else: 
-      subprocess.check_output("tmux display-message 'No macros file specified for session, cannot reload.'", shell = True)
+    macrosets = toml_dict.get("macrosets", None)
+    if macrosets:
+      for name in macrosets:
+        if name == desire:
+          pass
 
   else:
-    subprocess.check_output("tmux display-message 'No macros file specified for session, cannot reload.'", shell = True)
+    subprocess.check_output("tmux display-message 'No macros file specified for session, cannot run macros. Call supergrader with -M option.", shell = True)
 
 
-#if args.macro:
-#  name = args.macro[0]
-#  val = args.macro[1]
-#  cmd = "tmux setenv 'macro_" + name + "' '" + val + "'"
-#  subprocess.check_output(cmd, shell = True)
-#  quit()
-
-if args.use_macro:
-  macro_val = subprocess.check_output("tmux showenv 'macro_" + args.use_macro + "'", shell = True)
-  macro_val = macro_val[(len(args.use_macro)+7):].strip()# get rid of macro_thename=
+if "macro_panel" in args:
+  macro_val = read_macro(args.macro_name) 
   macro_res = subprocess.check_output('/bin/echo -n -e "' + macro_val + '"', shell = True)
   lines = macro_res.split("\n")
   print(lines)
   for line in lines:
-    line = re.subn(r"'", r"'\''", line, 0)[0]
-    cmd = "tmux send-keys -l '" + line + "'"
+    cmd = "tmux send-keys -t SuperGrader:panels." + args.macro_panel + " -l '" + line + "'"
     subprocess.check_output(cmd, shell = True)
+    cmd = "tmux send-keys -t SuperGrader:panels." + args.macro_panel + " Enter"
+    subprocess.check_output(cmd, shell = True)
+  quit()
+
+
+
+if args.use_macro:
+  macro_val = read_macro(args.use_macro)
+  macro_res = subprocess.check_output('/bin/echo -n -e "' + macro_val + '"', shell = True)
+  lines = macro_res.split("\n")
+  for line in lines:
+    special_split = line.split("@@@")   # sleep 5\n@@@Ctrl-C@@@ echo done\n -> ["sleep 5\n", "Ctrl-C", "echo done\n"]
+    
+    for i in range(0,len(special_split)):
+      tosend = special_split[i]
+      tmux_control = i % 2 == 1
+
+      if tmux_control:
+        if tosend.startswith("WAIT-"):
+          secs = re.subn("WAIT-", "", tosend)[0]
+          time.sleep(int(secs))
+          continue
+
+      if tmux_control:
+        cmd = "tmux send-keys '" + tosend + "'"
+        subprocess.check_output(cmd, shell = True)
+
+      else:
+        cmd = "tmux send-keys -l '" + tosend + "'"
+        subprocess.check_output(cmd, shell = True)
+        
     cmd = "tmux send-keys Enter"
     subprocess.check_output(cmd, shell = True)
+
   quit()
 
 if args.dir == None and args.next == False and args.previous == False:
   subprocess.check_output("tmux display-message 'supergrader_utility.py called with no valid options. This shouldnt happen. WHAT DID YOU DO?", shell = True)
   sys.exit(1)
 
+#########################################
+### If we get here, we're moving to a different folder (or at least attempting to). 
 
 sg_info = subprocess.check_output("tmux showenv SG_INFO", shell = True).strip()
 sg_dict = json.loads(sg_info[8:])   # strip off "SG_DICT=" 

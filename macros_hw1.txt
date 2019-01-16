@@ -1,0 +1,30 @@
+
+[macros]
+good = """
+Regraded for 5/5, nicely done :)
+
+Note that I've changed "regrade_please" to "regraded" with the date, so that 
+I don't accidently try to regrade twice (and I backed up your original file
+with a .backup extension, just in case). If you need me to take yet another 
+look for any reason, just add 
+
+# regrade_please 
+
+again somewhere in the code file, and I'll take a look the next time I get 
+around to processing regrades (hopefully once per week). 
+
+~Shawn
+"""
+
+grade = "$DIR\thw1\t$FDATE\t$HDATE\t0"
+
+edit = """
+sed -i".backup_$FDATE" -r "s/regrade_please/regraded $HDATE/g" hw1/hw1.py
+"""
+
+test = ["one", "two $FDATE", "three $DIR"]
+test2 = "hi@@@^O@@@@@@WAIT-2@@@\n there"
+
+[macrosets]
+
+allgood = "edit -> 1; good -> 4; grade -> 5 "

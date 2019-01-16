@@ -16,6 +16,7 @@ def parse_args():
   parser.add_argument('-M', '--macros_file', default = "NA", dest = 'macros_file', help = "Read macros from this file.")
   parser.add_argument('--theme', dest = 'theme', default = "dark", help = "Set color scheme to match your terminal theme. Either 'dark' or 'light'.")
 
+  #parser.add_argument('-M', '--macro', nargs=2, metavar = ('macro_name', 'macro_value'), help = "Define a macro (string that can later be inserted by macro name).")
   return parser.parse_args()
   
 args = parse_args()
@@ -141,9 +142,6 @@ else:
   subprocess.check_output("tmux set -g window-style 'fg=#AAAAAA,bg=#FFFFFF'", shell = True)
   subprocess.check_output("tmux set -g window-active-style 'fg=#000002,bg=#FFFFFF'", shell = True)
 
-if args.macros_file != "NA":
-  subprocess.check_output("tmux send -t SuperGrader:control 'supergrader_utility.py -M'", shell = True)
-  subprocess.check_output("tmux send -t SuperGrader:control Enter", shell = True)
 
 
 cmd = "tmux -2 attach "
