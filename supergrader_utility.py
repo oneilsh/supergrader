@@ -79,29 +79,29 @@ def read_macro(desired):
     macrosets = toml_dict.get("macrosets", None)
     if macrosets:
       for name in macrosets:
-        if name == desire:
-          pass
+        if name == desired:
+          val = macrosets[name]
+          per_panel_macros = val.split(";")
 
+          ret_dict = dict()
+          for per_panel_macro in per_panel_macros:
+            macro, panel = [part.strip() for part in per_panel_macro.split("->")]
+            ret_dict[panel] = macro
+          return ret_dict
+  
   else:
     subprocess.check_output("tmux display-message 'No macros file specified for session, cannot run macros. Call supergrader with -M option.", shell = True)
 
 
-if "macro_panel" in args:
-  macro_val = read_macro(args.macro_name) 
-  macro_res = subprocess.check_output('/bin/echo -n -e "' + macro_val + '"', shell = True)
-  lines = macro_res.split("\n")
-  print(lines)
-  for line in lines:
-    cmd = "tmux send-keys -t SuperGrader:panels." + args.macro_panel + " -l '" + line + "'"
-    subprocess.check_output(cmd, shell = True)
-    cmd = "tmux send-keys -t SuperGrader:panels." + args.macro_panel + " Enter"
-    subprocess.check_output(cmd, shell = True)
-  quit()
 
 
 
 if args.use_macro:
   macro_val = read_macro(args.use_macro)
+  if macro_val.__class__.__name__ == 'dict':
+
+    quit()
+
   macro_res = subprocess.check_output('/bin/echo -n -e "' + macro_val + '"', shell = True)
   lines = macro_res.split("\n")
   for line in lines:
