@@ -16,31 +16,30 @@ def parse_args():
   parser.add_argument('-M', '--macros_file', default = "NA", dest = 'macros_file', help = "Read macros from this file.")
   parser.add_argument('--theme', dest = 'theme', default = "dark", help = "Set color scheme to match your terminal theme. Either 'dark' or 'light'.")
 
-  #parser.add_argument('-M', '--macro', nargs=2, metavar = ('macro_name', 'macro_value'), help = "Define a macro (string that can later be inserted by macro name).")
   return parser.parse_args()
-  
+
 args = parse_args()
 args.directory = os.path.realpath(args.directory)
 
 
-def get_subdirs(dir, filter_command = None):
-  alldirs = [os.path.join(dir, o) for o in os.listdir(dir) if os.path.isdir(os.path.join(dir,o))]
+def get_subdirs(basedir, filter_command = None):
+  alldirs = [os.path.join(basedir, o) for o in os.listdir(basedir) if os.path.isdir(os.path.join(basedir,o))]
   alldirs = [os.path.realpath(d) for d in alldirs]
   if not filter_command:
     return alldirs
-    
+
   filtered = []
-  for dir in alldirs:
+  for fulldir in alldirs:
+    dir = os.path.basename(fulldir)
     try:
-      #cmd = "/bin/test \"$?BASH_VERSION\" = \"0\" || eval 'setenv() { export \"$1=$2\"; }'  "
-      #cmd = cmd + "; " + "setenv DIR " + os.path.basename(dir) + "; " + filter_command
-      cmd = "cd " + dir + "; " + filter_command
-      
-      sys.stderr.write("Checking filter in " + dir + " with `" + filter_command + "`\n")
-      result = subprocess.check_output(cmd, shell = True, cwd = dir).decode()
+      cmd = f"export DIR={dir}; cd {fulldir}; {filter_command}"
+
+      sys.stderr.write("Checking filter in " + dir + " with `" + filter_command)
+      result = subprocess.check_output(cmd, shell = True, cwd = fulldir).decode()
+      sys.stderr.write("; ✅\n")
       filtered.append(dir)
     except:
-      pass
+      sys.stderr.write("; ❌\n")
 
   if len(filtered) == 0:
       sys.stderr.write("No directories passed filter. Exiting.\n")

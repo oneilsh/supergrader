@@ -61,7 +61,7 @@ if args.show_interactive_help:
 # returns a string or a dict; if a string, it's the macro to run.
 # if a dict, it's a set of panel numbers as keys and macros to run in those
 # panels as values (for macrosets)
-def read_macro(desired):
+def read_macro(desired, currentdir = "$DIRUNKNOWN"):
   if os.environ.get("MACROFILE", "NA") != "NA":       # if there's a value and it's not NA
     toml_dict = toml.loads(io.open(os.environ["MACROFILE"], "r").read())
 
@@ -77,7 +77,7 @@ def read_macro(desired):
           val = re.subn(r"\n", r"\\n", val, 0)[0]
           val = re.subn(r"'", r"'\''", val, 0)[0]
           val = re.subn(r'"', r'"\""', val, 0)[0]
-          
+          val = re.subn(r"\$DIR", currentdir, val, 0)[0]
           return val
 
     macrosets = toml_dict.get("macrosets", None)
@@ -98,13 +98,16 @@ def read_macro(desired):
 
 
 
-
-
 if args.use_macro:
-  macro_val = read_macro(args.use_macro)
-  if macro_val.__class__.__name__ == 'dict':
+  sg_info = subprocess.check_output("tmux showenv SG_INFO", shell = True).decode().strip()
+  sg_str = sg_info[8:]
+  sg_dict = json.loads(sg_str)
+  currentdir = sg_dict["currentdir"]
 
-    quit()
+  macro_val = read_macro(args.use_macro, currentdir)
+  if macro_val.__class__.__name__ == 'dict':
+    macro_val = "Sorry, macrosets are not fully implemented."
+
 
   macro_res = subprocess.check_output('/bin/echo -n -e "' + macro_val + '"', shell = True).decode()
   lines = macro_res.split("\n")
@@ -218,12 +221,9 @@ subprocess.check_output("tmux set -g status-right '" + basename + "'", shell = T
 
 fdate = '"' + subprocess.check_output("date +%Y-%m-%d_%H:%M:%S", shell = True).decode().strip() + '"'
 hdate = '"' + subprocess.check_output("date '+%b %d, %Y @ %I:%M%p'", shell = True).decode().strip() + '"'
-#add_setenv_cmd = """  '/bin/test $?BASH_VERSION = 0 || eval ' "'" 'setenv ( ) {export $1=$2}' "'" Enter  """
-
-print(foldername)
 
 # set things up for the control panel to use things for macro 
-#subprocess.check_output("tmux send-keys -t SuperGrader:control.1 " + add_setenv_cmd, shell = True)    
+subprocess.check_output("tmux setenv DIR " + os.path.basename(foldername), shell = True)
 subprocess.check_output("tmux send-keys -t SuperGrader:control.1 " + " 'cd " + foldername + "'", shell = True)
 subprocess.check_output("tmux send-keys -t SuperGrader:control.1 " + " Enter", shell = True)
 subprocess.check_output("tmux send-keys -t SuperGrader:control.1 " + " 'export HDATE=" + hdate + "'", shell = True)
@@ -236,10 +236,10 @@ for panel in panels:
   type = panel["type"]
   command = panel["command"]
   index = panel["index"]
-  
+
   if type == "dynamic":  # need to update it
+    # maybe the respawn here is picking up the DIR env set above? anyway it works...
     subprocess.check_output("tmux respawn-pane -t SuperGrader:panels." + index + " -k -c '" + foldername + "'", shell = True)
-    #subprocess.check_output("tmux send-keys -t SuperGrader:panels." + index + " " + add_setenv_cmd, shell = True)    
     subprocess.check_output("tmux send-keys -t SuperGrader:panels." + index + " 'cd " + foldername + "'", shell = True)
     subprocess.check_output("tmux send-keys -t SuperGrader:panels." + index + " Enter", shell = True)
     subprocess.check_output("tmux send-keys -t SuperGrader:panels." + index + " 'export HDATE=" + hdate + "'", shell = True)
@@ -250,7 +250,6 @@ for panel in panels:
     subprocess.check_output("tmux send-keys -t SuperGrader:panels." + index + " C-l" , shell = True)
     subprocess.check_output("tmux send-keys -t SuperGrader:panels." + index + " '" + command + "'", shell = True)
     subprocess.check_output("tmux send-keys -t SuperGrader:panels." + index + " Enter", shell = True)
-
 
 subprocess.check_output("tmux select-window -t SuperGrader:panels", shell = True)
 
