@@ -32,10 +32,12 @@ def get_subdirs(dir, filter_command = None):
   filtered = []
   for dir in alldirs:
     try:
-      cmd = "/bin/test \"$?BASH_VERSION\" = \"0\" || eval 'setenv() { export \"$1=$2\"; }'  "
-      cmd = cmd + "; " + "setenv DIR " + os.path.basename(dir) + "; " + filter_command
+      #cmd = "/bin/test \"$?BASH_VERSION\" = \"0\" || eval 'setenv() { export \"$1=$2\"; }'  "
+      #cmd = cmd + "; " + "setenv DIR " + os.path.basename(dir) + "; " + filter_command
+      cmd = "cd " + dir + "; " + filter_command
+      
       sys.stderr.write("Checking filter in " + dir + " with `" + filter_command + "`\n")
-      result = subprocess.check_output(cmd, shell = True, cwd = dir) 
+      result = subprocess.check_output(cmd, shell = True, cwd = dir).decode()
       filtered.append(dir)
     except:
       pass
@@ -51,8 +53,8 @@ def get_subdirs(dir, filter_command = None):
 def create_session(panelcmds):
   session_name = "SuperGrader"
   try: # if it already exists...
-    check_result = subprocess.check_output("tmux has-session -t " + session_name, shell = True)
-    result = raw_input("A session exists with that name. Attach (a) or kill (k)? ")
+    check_result = subprocess.check_output("tmux has-session -t " + session_name, shell = True).decode()
+    result = input("A session exists with that name. Attach (a) or kill (k)? ")
     if result == "a":
       subprocess.check_output("tmux select-window -t SuperGrader:panels", shell = True)
       subprocess.check_output("tmux attach-session -d -t SuperGrader", shell = True)
@@ -100,12 +102,12 @@ panels = []
 for i in range(0, len(dynamic_panel_commands)):
   command = dynamic_panel_commands[i]
   type = "dynamic"
-  panels.append({"type": type, "command": command , "index": str(len(panels))})
+  panels.append({"type": type, "command": command , "index": str(len(panels) + 1)})
 
 for i in range(0, len(static_panel_commands)):
   command = static_panel_commands[i]
   type = "static"
-  panels.append({"type": type, "command": command, "index": str(len(panels))})
+  panels.append({"type": type, "command": command, "index": str(len(panels) + 1)})
 
 
 sg_dict = {"panels": panels, "dirs": dirs_list, "currentdir": "NA", "basedir": args.directory}

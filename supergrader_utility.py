@@ -36,7 +36,7 @@ args = parse_args()
 def session_exists():
   session_name = "SuperGrader"
   try:
-    check_result = subprocess.check_output("tmux has-session -t " + session_name, shell = True)
+    check_result = subprocess.check_output("tmux has-session -t " + session_name, shell = True).decode()
   except subprocess.CalledProcessError as res:
       return False
   return True
@@ -45,13 +45,17 @@ def session_exists():
 
 if args.show_interactive_help: 
   if session_exists():
-    subprocess.check_output("tmux select-window -t SuperGrader:control", shell = True)
-    windowsize = subpocess.check_output("tmux display -p '#{pane_width}'", shell = True).strip()
-    subprocess.check_output("tmux send 'cat " + script_path + "/supergrader_help.txt | fold -s -w " + windowsize + " | less && tmux select-window -t SuperGrader:panels'", shell = True)
-    subprocess.check_output("tmux send Enter", shell = True)
+    subprocess.check_output("tmux select-window -t SuperGrader:control", shell = True).decode()
+
+    windowsize = subprocess.check_output("tmux display -p '#{pane_width}'", shell = True).decode().strip()
+
+    subprocess.check_output("tmux send 'cat " + script_path + "/supergrader_help.txt | fold -s -w " + windowsize + " | less && tmux select-window -t SuperGrader:panels'", shell = True).decode()
+
+    subprocess.check_output("tmux send Enter", shell = True).decode()
   else:
     sys.stderr.write("Please don't run supergrader_utility.py directly. It's not meant for that. (If you used ^b h inside SuperGrader, this is an error that shouldn't happen.")
     exit(1)
+
 
 
 # returns a string or a dict; if a string, it's the macro to run.
@@ -102,7 +106,7 @@ if args.use_macro:
 
     quit()
 
-  macro_res = subprocess.check_output('/bin/echo -n -e "' + macro_val + '"', shell = True)
+  macro_res = subprocess.check_output('/bin/echo -n -e "' + macro_val + '"', shell = True).decode()
   lines = macro_res.split("\n")
   for line in lines:
     special_split = line.split("@@@")   # sleep 5\n@@@Ctrl-C@@@ echo done\n -> ["sleep 5\n", "Ctrl-C", "echo done\n"]
@@ -137,8 +141,9 @@ if args.dir == None and args.next == False and args.previous == False:
 #########################################
 ### If we get here, we're moving to a different folder (or at least attempting to). 
 
-sg_info = subprocess.check_output("tmux showenv SG_INFO", shell = True).strip()
-sg_dict = json.loads(sg_info[8:])   # strip off "SG_DICT=" 
+sg_info = subprocess.check_output("tmux showenv SG_INFO", shell = True).decode().strip()
+sg_str = sg_info[8:]
+sg_dict = json.loads(sg_str)   # strip off "SG_DICT=" 
 dirs = sg_dict["dirs"]
 panels = sg_dict["panels"]
 currentdir = sg_dict["currentdir"]
@@ -169,6 +174,7 @@ if currentdir == 'NA' and foldername == None:
   # we just set it to the first one in the list no matter what
   foldername = dirs[0]
 
+
 elif args.next == True:
   currentdir_index = dirs.index(currentdir)
   if currentdir_index + 1 < len(dirs):
@@ -196,7 +202,10 @@ subprocess.check_output(cmd, shell = True)
 gotofolder_index = dirs.index(foldername)
 
 basename = os.path.basename(foldername)
-fullname = subprocess.check_output("finger -l " + basename + " | grep Name | sed -r 's/^.+Name: //g'", shell = True)
+try:
+  fullname = subprocess.check_output("finger -l " + basename + " | grep Name | sed -r 's/^.+Name: //g'", shell = True).decode()
+except Exception as e:
+  fullname = "Unknown Name"
 fullname = fullname.replace("'", r"'\''")   # escape single quotes (e.g. in O'Neil, actually doing a ' => '\'' replacement)
 basename = str(1 + gotofolder_index) + "/" + str(len(dirs)) + " " + basename
 
@@ -207,18 +216,20 @@ basename = basename + " "
 subprocess.check_output("tmux set -g status-right '" + basename + "'", shell = True)
 
 
-fdate = '"' + subprocess.check_output("date +%Y-%m-%d_%H:%M:%S", shell = True).strip() + '"'
-hdate = '"' + subprocess.check_output("date '+%b %d, %Y @ %I:%M%p'", shell = True).strip() + '"'
-add_setenv_cmd = """  '/bin/test $?BASH_VERSION = 0 || eval ' "'" 'setenv ( ) {export $1=$2}' "'" Enter  """
+fdate = '"' + subprocess.check_output("date +%Y-%m-%d_%H:%M:%S", shell = True).decode().strip() + '"'
+hdate = '"' + subprocess.check_output("date '+%b %d, %Y @ %I:%M%p'", shell = True).decode().strip() + '"'
+#add_setenv_cmd = """  '/bin/test $?BASH_VERSION = 0 || eval ' "'" 'setenv ( ) {export $1=$2}' "'" Enter  """
+
+print(foldername)
 
 # set things up for the control panel to use things for macro 
-subprocess.check_output("tmux send-keys -t SuperGrader:control.0 " + add_setenv_cmd, shell = True)    
-subprocess.check_output("tmux send-keys -t SuperGrader:control.0 " + " 'setenv DIR " + os.path.basename(foldername) + "'", shell = True)
-subprocess.check_output("tmux send-keys -t SuperGrader:control.0 " + " Enter", shell = True)
-subprocess.check_output("tmux send-keys -t SuperGrader:control.0 " + " 'setenv HDATE " + hdate + "'", shell = True)
-subprocess.check_output("tmux send-keys -t SuperGrader:control.0 " + " Enter", shell = True)
-subprocess.check_output("tmux send-keys -t SuperGrader:control.0 " + " 'setenv FDATE " + fdate + "'", shell = True)
-subprocess.check_output("tmux send-keys -t SuperGrader:control.0 " + " Enter", shell = True)
+#subprocess.check_output("tmux send-keys -t SuperGrader:control.1 " + add_setenv_cmd, shell = True)    
+subprocess.check_output("tmux send-keys -t SuperGrader:control.1 " + " 'cd " + foldername + "'", shell = True)
+subprocess.check_output("tmux send-keys -t SuperGrader:control.1 " + " Enter", shell = True)
+subprocess.check_output("tmux send-keys -t SuperGrader:control.1 " + " 'export HDATE=" + hdate + "'", shell = True)
+subprocess.check_output("tmux send-keys -t SuperGrader:control.1 " + " Enter", shell = True)
+subprocess.check_output("tmux send-keys -t SuperGrader:control.1 " + " 'export FDATE=" + fdate + "'", shell = True)
+subprocess.check_output("tmux send-keys -t SuperGrader:control.1 " + " Enter", shell = True)
 
 # update the panels and refresh the display
 for panel in panels:
@@ -228,12 +239,12 @@ for panel in panels:
   
   if type == "dynamic":  # need to update it
     subprocess.check_output("tmux respawn-pane -t SuperGrader:panels." + index + " -k -c '" + foldername + "'", shell = True)
-    subprocess.check_output("tmux send-keys -t SuperGrader:panels." + index + " " + add_setenv_cmd, shell = True)    
-    subprocess.check_output("tmux send-keys -t SuperGrader:panels." + index + " 'setenv DIR " + os.path.basename(foldername) + "'", shell = True)
+    #subprocess.check_output("tmux send-keys -t SuperGrader:panels." + index + " " + add_setenv_cmd, shell = True)    
+    subprocess.check_output("tmux send-keys -t SuperGrader:panels." + index + " 'cd " + foldername + "'", shell = True)
     subprocess.check_output("tmux send-keys -t SuperGrader:panels." + index + " Enter", shell = True)
-    subprocess.check_output("tmux send-keys -t SuperGrader:panels." + index + " 'setenv HDATE " + hdate + "'", shell = True)
+    subprocess.check_output("tmux send-keys -t SuperGrader:panels." + index + " 'export HDATE=" + hdate + "'", shell = True)
     subprocess.check_output("tmux send-keys -t SuperGrader:panels." + index + " Enter", shell = True)
-    subprocess.check_output("tmux send-keys -t SuperGrader:panels." + index + " 'setenv FDATE " + fdate + "'", shell = True)
+    subprocess.check_output("tmux send-keys -t SuperGrader:panels." + index + " 'export FDATE=" + fdate + "'", shell = True)
     subprocess.check_output("tmux send-keys -t SuperGrader:panels." + index + " Enter", shell = True)
 
     subprocess.check_output("tmux send-keys -t SuperGrader:panels." + index + " C-l" , shell = True)
