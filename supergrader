@@ -7,6 +7,7 @@ import json
 import sys
 import toml
 
+
 def parse_args():
   parser = argparse.ArgumentParser("SuperGrader. For details run `supergrader.py` then Control-b h")
   parser.add_argument('-p', '--dynamic-panel', dest = 'dynamic_panel_cmds', action = 'append', help = "Create a pane running these commands for each folder.")
